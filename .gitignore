@@ -1,0 +1,31 @@
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio workspace
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+
+# Rider
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Optional: local debug settings
+launchSettings.json
+
+# Logs
+*.log
+
+# Generated files
+*.generated.cs
