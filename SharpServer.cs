@@ -25,7 +25,7 @@ class Sharpserver
 
         //Fufill request
         Request httpRequest = Decoder(buffer, bytesRecived);
-        Console.WriteLine("Verb: " + httpRequest.GetVerb() + " Path: " + httpRequest.GetPath() + " Version: " + httpRequest.GetVersion());
+        Console.WriteLine("Verb: " + httpRequest.Verb + " Path: " + httpRequest.Path + " Version: " + httpRequest.Version);
         Console.WriteLine("Accept-Encoding: " + httpRequest.GetHeader("Accept-Encoding"));
         Console.WriteLine("Client connected: " + clientSocket.RemoteEndPoint);
         
