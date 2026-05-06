@@ -21,10 +21,10 @@ class Sharpserver
         // Accept a connection
         byte[] buffer = new byte[256];
         Socket clientSocket = socket.Accept();
-        int bytesRecived = clientSocket.Receive(buffer);
+        int bytesReceived = clientSocket.Receive(buffer);
 
-        //Fufill request
-        Request httpRequest = Decoder(buffer, bytesRecived);
+        //Fulfill request
+        Request httpRequest = Decoder(buffer, bytesReceived);
         Console.WriteLine("Verb: " + httpRequest.Verb + " Path: " + httpRequest.Path + " Version: " + httpRequest.Version);
         Console.WriteLine("Accept-Encoding: " + httpRequest.GetHeader("Accept-Encoding"));
         Console.WriteLine("Client connected: " + clientSocket.RemoteEndPoint);
@@ -35,15 +35,22 @@ class Sharpserver
     }
 
     //Turns the request from the client into a request object 
-    public static Request Decoder(byte[] buffer, int bytesRecived){
+    public static Request Decoder(byte[] buffer, int bytesReceived){
         char[] responseChars = new char[256];
 
-        Encoding.ASCII.GetChars(buffer, 0, bytesRecived, responseChars, 0);
+        Encoding.ASCII.GetChars(buffer, 0, bytesReceived, responseChars, 0);
 
-        List<string> request = new string(responseChars).Split("\n").ToList<string>();
+        Dictionary<string, string> headers = new Dictionary<string, string>();
+        string[] request = new string(responseChars).Split("\n");
         string[] requestHead = request[0].Trim().Split(" ");
-        request.RemoveAt(0);
+        
+        //Splits the header value pair and puts the into a dictionary for future use
+        for (int i=1; i<request.Length; i++)
+        {
+            string[] data = request[i].Split(":",2);
+            headers.Add(data[0].Trim(), data[1].Trim());
+        }
 
-        return new Request(requestHead[0], requestHead[1], requestHead[2], request);
+        return new Request(requestHead[0], requestHead[1], requestHead[2], headers);
     }
 }
