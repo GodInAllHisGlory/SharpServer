@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 
 class Sharpserver
 {
@@ -10,7 +11,11 @@ class Sharpserver
         const int PORT = 8000;
         Uri uri = new Uri("http://127.0.0.1");
         Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-        
+
+        //Creates the endpoints found in endpoints.json when the server is first started.
+        //If the endpoint's cannot be created then the server does not start.
+        if(!CreateEndpoints("/home/nathan/Projects/SharpServer/endpoints", out List<Endpoint> endpoints)) return;
+                
         // Bind the socket to the local endpoint
         socket.Bind(new IPEndPoint(IPAddress.Parse(uri.Host), PORT));
         
@@ -34,6 +39,30 @@ class Sharpserver
         socket.Close();
     }
 
+    //Goes through a specified directory and creates endpoints from the JSON files inside.
+    //Returns true is the endpoints are created without incident, false otherwise.
+    public static bool CreateEndpoints(string endpointDir, out List<Endpoint> endpoints)
+    {
+        FileInfo[] endpointFiles;
+        endpoints = new List<Endpoint>();
+        try
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(endpointDir);
+            endpointFiles = directoryInfo.GetFiles();
+
+            foreach(FileInfo file in endpointFiles)
+            {
+                string endpointJson = file.OpenText().ReadToEnd();
+                endpoints.Add(JsonSerializer.Deserialize<Endpoint>(endpointJson));
+            }
+        } catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+        return true;
+    }
+
     //Turns the request from the client into a request object 
     public static Request Decoder(byte[] buffer, int bytesReceived){
         char[] responseChars = new char[256];
@@ -44,7 +73,7 @@ class Sharpserver
         string[] request = new string(responseChars).Split("\n");
         string[] requestHead = request[0].Trim().Split(" ");
         
-        //Splits the header value pair and puts the into a dictionary for future use
+        //Splits the header value pair and puts the into a dictionary for future reference
         for (int i=1; i<request.Length; i++)
         {
             string[] data = request[i].Split(":",2);
