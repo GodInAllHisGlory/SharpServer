@@ -14,7 +14,7 @@ class Sharpserver
 
         //Creates the endpoints found in endpoints.json when the server is first started.
         //If the endpoint's cannot be created then the server does not start.
-        if(!CreateEndpoints("/home/nathan/Projects/SharpServer/endpoints", out List<Endpoint> endpoints)) return;
+        if(!CreateEndpoints("endpoints", out List<Endpoint> endpoints)) return;
                 
         // Bind the socket to the local endpoint
         socket.Bind(new IPEndPoint(IPAddress.Parse(uri.Host), PORT));
