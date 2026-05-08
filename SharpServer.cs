@@ -11,10 +11,12 @@ class Sharpserver
         const int PORT = 8000;
         Uri uri = new Uri("http://127.0.0.1");
         Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+        List<Endpoint> endpoints = new List<Endpoint>();
 
         //Creates the endpoints found in endpoints.json when the server is first started.
         //If the endpoint's cannot be created then the server does not start.
-        if(!CreateEndpoints("endpoints", out List<Endpoint> endpoints)) return;
+        if(!CreateEndpoints("endpoints", endpoints)) return;
+        Console.WriteLine(endpoints[0].Path);
                 
         // Bind the socket to the local endpoint
         socket.Bind(new IPEndPoint(IPAddress.Parse(uri.Host), PORT));
@@ -39,28 +41,15 @@ class Sharpserver
         socket.Close();
     }
 
-    //Goes through a specified directory and creates endpoints from the JSON files inside.
-    //Returns true is the endpoints are created without incident, false otherwise.
-    public static bool CreateEndpoints(string endpointDir, out List<Endpoint> endpoints)
+    public static Endpoint router(List<Endpoint> endpoints, Request request)
     {
-        FileInfo[] endpointFiles;
-        endpoints = new List<Endpoint>();
-        try
+        foreach(Endpoint endpoint in endpoints)
         {
-            DirectoryInfo directoryInfo = new DirectoryInfo(endpointDir);
-            endpointFiles = directoryInfo.GetFiles();
-
-            foreach(FileInfo file in endpointFiles)
-            {
-                string endpointJson = file.OpenText().ReadToEnd();
-                endpoints.Add(JsonSerializer.Deserialize<Endpoint>(endpointJson));
-            }
-        } catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return false;
+            if(request.Path == endpoint.Path) return endpoint;
         }
-        return true;
+
+        //If path isn't found return 404 page
+        return new Endpoint(null,"template/404.html"); 
     }
 
     //Turns the request from the client into a request object 
@@ -81,5 +70,45 @@ class Sharpserver
         }
 
         return new Request(requestHead[0], requestHead[1], requestHead[2], headers);
+    }
+
+    public byte[] Encoder(Response response)
+    {
+        string responseHead = response.Version + response.Code + response.Status;
+        string headers = "";
+
+        foreach(KeyValuePair<string, string> header in response.Headers)
+        {
+            headers += $"\n + {header.Key}: {header.Value}";
+        }
+
+        string fullResponse = $"{responseHead} {headers} \n \n {response.Body}";
+
+        return Encoding.ASCII.GetBytes(fullResponse);
+
+    }
+
+    //Goes through a specified directory and creates endpoints from the JSON files inside.
+    //Returns true is the endpoints are created without incident, false otherwise.
+    public static bool CreateEndpoints(string endpointDir,  List<Endpoint> endpoints)
+    {
+        FileInfo[] endpointFiles;
+        // endpoints = new List<Endpoint>();
+        try
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(endpointDir);
+            endpointFiles = directoryInfo.GetFiles();
+
+            foreach(FileInfo file in endpointFiles)
+            {
+                string endpointJson = file.OpenText().ReadToEnd();
+                endpoints.Add(JsonSerializer.Deserialize<Endpoint>(endpointJson));
+            }
+        } catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+        return true;
     }
 }

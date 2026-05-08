@@ -15,23 +15,6 @@ class Response
     public int Code { get; }
     public string Status { get; }
     public string Body { get; }
-    public IReadOnlyDictionary<string, string> Headers => headers;
-
-    public string ConstructResponse()
-    {
-        string responseHead = Version + Code + Status;
-        string headers = "";
-
-        foreach(KeyValuePair<string, string> header in Headers)
-        {
-            headers += "\n" + header.Key + ":" + header.Value;
-        }
-
-        return responseHead + 
-                headers +
-                "\n \n" +
-                Body;
-
-    }
+    public Dictionary<string, string> Headers => headers;
 
 }
