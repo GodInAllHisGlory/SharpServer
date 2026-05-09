@@ -1,3 +1,4 @@
+// Adds important headers needed for each response object
 class HeadersMiddleware
 {
     public static MiddlewareDelegate Factory(MiddlewareDelegate next)

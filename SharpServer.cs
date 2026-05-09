@@ -26,32 +26,41 @@ class Sharpserver
         socket.Listen(10);
         Console.WriteLine("Server listening on " + uri.Host + ":" + PORT);
 
-        // Accept a connection
-        byte[] buffer = new byte[4096];
-        Socket clientSocket = socket.Accept();
-        int bytesReceived = clientSocket.Receive(buffer);
-
-        // Fulfill request
-        Request httpRequest = Decoder(buffer, bytesReceived);
-        Console.WriteLine("Verb: " + httpRequest.Verb + " Path: " + httpRequest.Path + " Version: " + httpRequest.Version);
-        Console.WriteLine("Accept-Encoding: " + httpRequest.GetHeader("Accept-Encoding"));
-        Console.WriteLine("Client connected: " + clientSocket.RemoteEndPoint);
-
-        MiddlewareDelegate app = BuildPipeline(
-            new List<Func<MiddlewareDelegate, MiddlewareDelegate>>
+        while (true)
+        {
+            try
             {
+                // Accept a connection
+                byte[] buffer = new byte[4096];
+                Socket clientSocket = socket.Accept();
+                int bytesReceived = clientSocket.Receive(buffer);
+
+                // Fulfill request
+                Request httpRequest = Decoder(buffer, bytesReceived);
+
+                MiddlewareDelegate app = BuildPipeline(
+                    new List<Func<MiddlewareDelegate, MiddlewareDelegate>>
+                    {
+                LoggingMiddleware.Factory,
                 HeadersMiddleware.Factory
-            },
-            (request, responseHeaders) => router(endpoints, request, responseHeaders)
-        );
+                    },
+                    (request, responseHeaders) => router(endpoints, request, responseHeaders)
+                );
 
-        Response response = app(httpRequest, new Dictionary<string, string>());
-        byte[] responseBytes = Encoder(response);
-        clientSocket.Send(responseBytes);
+                Response response = app(httpRequest, new Dictionary<string, string>());
+                byte[] responseBytes = Encoder(response);
+                clientSocket.Send(responseBytes);
 
-        // Close sockets
-        clientSocket.Close();
-        socket.Close();
+                clientSocket.Close();
+            }
+            catch (Exception e)
+            {
+                socket.Close();
+                Console.WriteLine("Server shutting down because:");
+                Console.WriteLine(e);
+                break;
+            }
+        }
     }
 
     public static MiddlewareDelegate BuildPipeline(List<Func<MiddlewareDelegate, MiddlewareDelegate>> middleware, MiddlewareDelegate terminal)
