@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 //Holds all the information of a http request 
-class Request
+public class Request
 {
     private readonly Dictionary<string, string> headers;
 

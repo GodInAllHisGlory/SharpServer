@@ -1,4 +1,4 @@
-class Response
+public class Response
 {
     private Dictionary<string, string> headers;
 
