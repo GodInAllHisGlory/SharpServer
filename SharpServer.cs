@@ -42,7 +42,8 @@ class Sharpserver
                     new List<Func<MiddlewareDelegate, MiddlewareDelegate>>
                     {
                 LoggingMiddleware.Factory,
-                HeadersMiddleware.Factory
+                HeadersMiddleware.Factory,
+                GetStatic.Factory
                     },
                     (request, responseHeaders) => router(endpoints, request, responseHeaders)
                 );
@@ -92,7 +93,7 @@ class Sharpserver
                 response = GET.Get(resource, responseHeaders);
                 break;
             default:
-                response = new Response("HTTP/1.1", 501, "Not Implemented", string.Empty, responseHeaders);
+                response = new Response("HTTP/1.1", 501, "Not Implemented", new byte[0], responseHeaders);
                 break;
         }
         return response;
@@ -132,14 +133,14 @@ class Sharpserver
         {
             builder.AppendFormat("{0}: {1}\r\n", header.Key, header.Value);
         }
+        
+        builder.Append("\n");
 
-        builder.Append("\r\n");
-        if (!string.IsNullOrEmpty(response.Body))
-        {
-            builder.Append(response.Body);
-        }
-
-        return Encoding.ASCII.GetBytes(builder.ToString());
+        byte[] headerBytes = Encoding.ASCII.GetBytes(builder.ToString());
+        byte[] result = new byte[headerBytes.Length + response.Body.Length];
+        Buffer.BlockCopy(headerBytes, 0, result, 0, headerBytes.Length);
+        Buffer.BlockCopy(response.Body, 0, result, headerBytes.Length, response.Body.Length);
+        return result;
     }
 
     // Goes through a specified directory and creates endpoints from the JSON files inside.
